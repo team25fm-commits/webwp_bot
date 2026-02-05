@@ -37,31 +37,44 @@ class WhatsappService {
     createClient() {
         logger.info('Creating WhatsApp Client...');
 
-        const puppeteerConfig = {
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu'
-            ],
-            headless: true,
-            timeout: 60000 // 60 seconds timeout
-        };
+        try {
+            const puppeteerConfig = {
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu'
+                ],
+                headless: true,
+                timeout: 60000 // 60 seconds timeout
+            };
 
-        // Try to set executablePath if we can find it
-        const chromePath = getChromePath();
-        if (chromePath) {
-            logger.info(`Using Chrome at: ${chromePath}`);
-            puppeteerConfig.executablePath = chromePath;
+            // Try to set executablePath if we can find it
+            const chromePath = getChromePath();
+            if (chromePath) {
+                logger.info(`Using Chrome at: ${chromePath}`);
+                puppeteerConfig.executablePath = chromePath;
+            } else {
+                logger.info('No explicit Chrome path found, letting Puppeteer find it automatically');
+            }
+
+            this.client = new Client({
+                authStrategy: new LocalAuth(),
+                puppeteer: puppeteerConfig
+            });
+
+            if (!this.client) {
+                throw new Error('Client creation returned null');
+            }
+
+            logger.info('WhatsApp Client created successfully');
+        } catch (error) {
+            logger.error(`Failed to create WhatsApp Client: ${error.message}`);
+            throw error;
         }
-
-        this.client = new Client({
-            authStrategy: new LocalAuth(),
-            puppeteer: puppeteerConfig
-        });
     }
 
     initialize() {

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: #888; margin-bottom: 30px; }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        .status.connected { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .status.disconnected { background: rgba(255,100,100,0.2); color: #ff6464; }
+        .status.waiting { background: rgba(255,200,0,0.2); color: #ffc800; }
+        .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        .connected .dot { background: #00ff88; }
+        .disconnected .dot { background: #ff6464; }
+        .waiting .dot { background: #ffc800; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        #qr-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+        #qr-code {
+            font-family: monospace;
+            white-space: pre;
+            font-size: 4px;
+            line-height: 4px;
+            color: #000;
+            letter-spacing: 0;
+        }
+        #qr-image {
+            max-width: 250px;
+            height: auto;
+        }
+        .hidden { display: none !important; }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            color: #1a1a2e;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .log {
+            margin-top: 30px;
+            text-align: left;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .log-entry { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .log-time { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 WhatsApp Bot</h1>
+        <p class="subtitle">Team 25 Auto-Poster</p>
+        
+        <div id="status" class="status waiting">
+            <span class="dot"></span>
+            <span id="status-text">Initializing...</span>
+        </div>
+        
+        <div id="qr-container" class="hidden">
+            <img id="qr-image" src="" alt="Scan QR Code">
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-morning" onclick="triggerMorning()" disabled>
+                ☀️ Send Morning Msg
+            </button>
+            <button class="btn btn-secondary" id="btn-post" onclick="triggerPost()" disabled>
+                📸 Send Image Post
+            </button>
+        </div>
+        
+        <div class="log" id="log">
+            <div class="log-entry"><span class="log-time">[--:--]</span> Dashboard loaded...</div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const statusEl = document.getElementById('status');
+        const statusText = document.getElementById('status-text');
+        const qrContainer = document.getElementById('qr-container');
+        const qrImage = document.getElementById('qr-image');
+        const btnMorning = document.getElementById('btn-morning');
+        const btnPost = document.getElementById('btn-post');
+        const logEl = document.getElementById('log');
+        
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            logEl.innerHTML += `<div class="log-entry"><span class="log-time">[${time}]</span> ${msg}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        socket.on('qr', (qr) => {
+            statusEl.className = 'status waiting';
+            statusText.textContent = 'Scan QR Code';
+            qrImage.src = qr;
+            qrContainer.classList.remove('hidden');
+            addLog('QR Code generated. Please scan with WhatsApp.');
+        });
+        
+        socket.on('ready', () => {
+            statusEl.className = 'status connected';
+            statusText.textContent = 'Connected';
+            qrContainer.classList.add('hidden');
+            btnMorning.disabled = false;
+            btnPost.disabled = false;
+            addLog('✅ WhatsApp Connected!');
+        });
+        
+        socket.on('disconnected', () => {
+            statusEl.className = 'status disconnected';
+            statusText.textContent = 'Disconnected';
+            btnMorning.disabled = true;
+            btnPost.disabled = true;
+            addLog('❌ WhatsApp Disconnected');
+        });
+        
+        socket.on('log', (msg) => {
+            addLog(msg);
+        });
+        
+        function triggerMorning() {
+            btnMorning.disabled = true;
+            socket.emit('trigger', 'morning');
+            addLog('Triggering Morning Message...');
+            setTimeout(() => btnMorning.disabled = false, 5000);
+        }
+        
+        function triggerPost() {
+            btnPost.disabled = true;
+            socket.emit('trigger', 'post');
+            addLog('Triggering Image Post...');
+            setTimeout(() => btnPost.disabled = false, 10000);
+        }
+    </script>
+</body>
+</html>

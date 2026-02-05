@@ -1,0 +1,23 @@
+# Environment & Credentials
+.env
+credentials.json
+*.json
+
+# WhatsApp Session
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Logs
+logs/
+*.log
+
+# Node
+node_modules/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Debug files
+debug_*.js
+test_*.js

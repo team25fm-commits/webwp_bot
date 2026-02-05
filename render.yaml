@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: whatsapp-bot
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: PENDING_FOLDER_ID
+        sync: false
+      - key: DONE_FOLDER_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: WHATSAPP_GROUP_NAME
+        sync: false
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false
+      - key: TZ
+        value: Asia/Kolkata

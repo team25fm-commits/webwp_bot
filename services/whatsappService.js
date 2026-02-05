@@ -45,10 +45,10 @@ class WhatsappService {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu',
-                '--single-process' // Required for some cloud environments
+                '--disable-gpu'
             ],
-            headless: true
+            headless: true,
+            timeout: 60000 // 60 seconds timeout
         };
 
         // Try to set executablePath if we can find it

@@ -1,9 +1,7 @@
 services:
   - type: web
     name: whatsapp-bot
-    runtime: node
-    buildCommand: npm install
-    startCommand: node server.js
+    runtime: docker
     healthCheckPath: /health
     envVars:
       - key: PENDING_FOLDER_ID
@@ -18,5 +16,3 @@ services:
         sync: false
       - key: TZ
         value: Asia/Kolkata
-      - key: PUPPETEER_CACHE_DIR
-        value: /opt/render/project/puppeteer

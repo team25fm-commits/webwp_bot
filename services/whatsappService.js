@@ -3,18 +3,18 @@ const { Client, LocalAuth, MessageMedia } = pkg;
 import qrcode from 'qrcode-terminal';
 import logger from '../utils/logger.js';
 import { config } from '../config/constants.js';
-import puppeteer from 'puppeteer';
 
-// Get Chrome executable path from puppeteer
+// Get Chrome executable path (prioritize env var for Docker)
 const getChromePath = () => {
-    try {
-        const execPath = puppeteer.executablePath();
-        logger.info(`Puppeteer Chrome path: ${execPath}`);
-        return execPath;
-    } catch (error) {
-        logger.warn(`Could not get puppeteer executablePath: ${error.message}`);
-        return undefined;
+    // Docker/Render sets this via Dockerfile
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        logger.info(`Using Chrome from env: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
     }
+
+    // For local development, let whatsapp-web.js find it automatically
+    logger.info('No PUPPETEER_EXECUTABLE_PATH set, using default');
+    return undefined;
 };
 
 class WhatsappService {

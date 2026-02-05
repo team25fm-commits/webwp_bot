@@ -4,6 +4,30 @@ import qrcode from 'qrcode-terminal';
 import logger from '../utils/logger.js';
 import { config } from '../config/constants.js';
 
+// Helper to find Chrome executable path
+const getChromePath = () => {
+    try {
+        // Try to get puppeteer's bundled chromium path
+        const puppeteer = require('puppeteer');
+        return puppeteer.executablePath();
+    } catch (e) {
+        // Fallback for Render: check common locations
+        const fs = require('fs');
+        const paths = [
+            '/opt/render/project/puppeteer/chrome/linux-*/chrome-linux64/chrome',
+            '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
+            process.env.PUPPETEER_EXECUTABLE_PATH
+        ].filter(Boolean);
+
+        for (const p of paths) {
+            if (p && fs.existsSync(p.split('*')[0])) {
+                return p;
+            }
+        }
+        return undefined; // Let puppeteer find it
+    }
+};
+
 class WhatsappService {
     constructor() {
         this.client = null;
@@ -13,20 +37,30 @@ class WhatsappService {
     createClient() {
         logger.info('Creating WhatsApp Client...');
 
+        const puppeteerConfig = {
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--single-process' // Required for some cloud environments
+            ],
+            headless: true
+        };
+
+        // Try to set executablePath if we can find it
+        const chromePath = getChromePath();
+        if (chromePath) {
+            logger.info(`Using Chrome at: ${chromePath}`);
+            puppeteerConfig.executablePath = chromePath;
+        }
+
         this.client = new Client({
             authStrategy: new LocalAuth(),
-            puppeteer: {
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--disable-gpu'
-                ],
-                headless: true
-            }
+            puppeteer: puppeteerConfig
         });
     }
 

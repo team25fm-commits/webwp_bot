@@ -18,3 +18,5 @@ services:
         sync: false
       - key: TZ
         value: Asia/Kolkata
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/project/puppeteer

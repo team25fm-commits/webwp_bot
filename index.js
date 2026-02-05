@@ -62,6 +62,7 @@ const start = async () => {
     try {
         // Initialize Services
         await driveService.authenticate();
+        whatsappService.createClient(); // Must create client first!
         await whatsappService.initialize();
 
         // Print Group IDs on startup

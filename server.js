@@ -165,6 +165,12 @@ const start = async () => {
             }
         });
 
+        whatsappService.client.on('authenticated', () => {
+            logger.info('WhatsApp Authenticated!');
+            broadcast('authenticated');
+            broadcast('log', '🟡 Authenticated! Loading data...');
+        });
+
         whatsappService.client.on('ready', () => {
             broadcast('ready');
             broadcast('log', '🟢 WhatsApp Connected');

@@ -51,7 +51,9 @@ class WhatsappService {
             }
 
             this.client = new Client({
-                authStrategy: new LocalAuth(),
+                authStrategy: new LocalAuth({
+                    dataPath: '/app/.wwebjs_auth'  // Explicit path for Docker
+                }),
                 puppeteer: puppeteerConfig
             });
 
@@ -78,13 +80,17 @@ class WhatsappService {
             qrcode.generate(qr, { small: true });
         });
 
-        this.client.on('ready', () => {
-            logger.info('WhatsApp Client is ready!');
-            this.isReady = true;
+        this.client.on('loading_screen', (percent, message) => {
+            logger.info(`Loading: ${percent}% - ${message}`);
         });
 
         this.client.on('authenticated', () => {
             logger.info('WhatsApp Authenticated successfully');
+        });
+
+        this.client.on('ready', () => {
+            logger.info('WhatsApp Client is ready!');
+            this.isReady = true;
         });
 
         this.client.on('auth_failure', msg => {
@@ -94,6 +100,11 @@ class WhatsappService {
         this.client.on('disconnected', (reason) => {
             logger.warn('WhatsApp disconnected:', reason);
             this.isReady = false;
+        });
+
+        // Catch any uncaught errors from the client
+        this.client.on('change_state', state => {
+            logger.info(`WhatsApp state changed: ${state}`);
         });
     }
 

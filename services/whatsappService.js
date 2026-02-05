@@ -3,29 +3,18 @@ const { Client, LocalAuth, MessageMedia } = pkg;
 import qrcode from 'qrcode-terminal';
 import logger from '../utils/logger.js';
 import { config } from '../config/constants.js';
-import fs from 'fs';
-import { execSync } from 'child_process';
+import puppeteer from 'puppeteer';
 
-// Helper to find Chrome executable path for cloud environments
+// Get Chrome executable path from puppeteer
 const getChromePath = () => {
-    // Check environment variable first
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    try {
+        const execPath = puppeteer.executablePath();
+        logger.info(`Puppeteer Chrome path: ${execPath}`);
+        return execPath;
+    } catch (error) {
+        logger.warn(`Could not get puppeteer executablePath: ${error.message}`);
+        return undefined;
     }
-
-    // Check Render's common puppeteer cache locations
-    const possiblePaths = [
-        '/opt/render/project/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome',
-        '/opt/render/.cache/puppeteer/chrome/linux-131.0.6778.204/chrome-linux64/chrome'
-    ];
-
-    for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-            return p;
-        }
-    }
-
-    return undefined; // Let puppeteer find it automatically
 };
 
 class WhatsappService {
